@@ -1,0 +1,35 @@
+StartCamp:You wake up near a campfire, with no idea how you got there.
+CampLight:You successfully light the campfire, the blazing fire crackles, bringing long-needed warmth to your body.
+Camp:There is a campfire that looks newly burnt out, as if someone was recently there... The scene looks oddly familiar.
+Camp2:There are faint signs of a campfire. You wonder who else could be here.
+CampAdj:there seems to be a makeshift camp, with the remnants of a campfire in the center.
+Plains:The grassy fields stretch far and wide, and under the sun it feels safe... temporarily.
+Plains2:The grass rustles in the wind, and under the hot sun you feel a temporary sense of peace.
+PlainsAdj:rolling hills stretch, filled with grass, as far as you can see.
+PlainsN:The eerie fields you once considered safe seem to be filled with unseen dangers, and a shiver goes down your spine.
+LForest:The sparse trees still retain good visibility, the sun filters through the thin foliage, dappling the ground underneath.
+LForest2:The trees rustle in the light breeze, the sunlight cast from the leaves scattering and wavering on the ground below.
+LForestAdj:there is a sparse forest, the foliage and trunks thin.
+LForestN:The unknown noises seem all around you, every rustle an unknown danger. The dappled moonlight does little to show what might be lurking in the shadows.
+Forest:The foliage is thick here, a faint flicker of sunlight here and there lights your way. Things seem to be creeping around you, afraid to come out at day.
+Forest2:The wind rustles the branches, thick with leaves, and the faint pinpricks of sunlight on the ground wave wildy in the breeze. The... things... seem to be getting bolder.
+ForestAdj:the forest is relatively thick, the foliage a green carpet with scattered dots of sky, the trunks thick yet far apart.
+ForestN:They seem to be near you, around you, in every rustle of the underbrush, in every movement of a branch. The moonlight does little to illuminate the gloom.
+DForest:The dense foliage blocks all sunlight around you, and only the dim light of muffled sun slightly illuminates your surroundings. You turn around constantly, thinking something is behind you, tracking you. But every time you do, nothing remains.
+DForest2:You can hear the wind whipping up the branches far away, but you're in too deep to feel it. The howling of the wind seems almost eerie, like a lost soul, desparately searching for a way out. Maybe you should too...
+DForestAdj:the trees tower tall and thick, as if giants determined to block any trace of sky. These caverns are for the darkest of creatures, creeping stealthily in the shadows.
+DForestN:You can hear them, all around you, tailing you, snarling. There are noises, cracking of branches, of leaves, all around, but nothing appears. It is pitch dark, the bark of the trees rough under your skin, and you feel the brush of things you are too afraid to see.
+Biomes:Plains,LForest,Forest,DForest
+//
+Plains:grass;60,pebble;10,rock;5,soil;10,fertile soil;4,iron ore;1,flint;10,
+LForest:grass;30,rock;10,pebble;15,soil;10,fertile soil;5,flint;15,iron ore;5,stick;10
+Forest:grass;10,rock;15,pebble;25,soil;10,fertile soil;10,iron ore;5,flint;15,stick;10
+DForest:rock;20,soil;15,fertile soil;15,iron ore;10,flint;20,stick;20
+//
+wolf:hp;70,atk;10,def;10,spd;20,spawn;1
+alpha wolf:hp;90,atk;20,def;15,spd;25,spawn;2
+bear:hp;110,atk;25,def;40,spd;10,spawn;4
+snake:hp;30,atk;50,def;10,spd;40,spawn;1
+giant spider:hp;10,atk;40,def;0,spd;30,spawn;1
+jaguar:hp;90,atk;60,def;20,spd;20,spawn;5
+//
