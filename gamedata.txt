@@ -32,4 +32,3 @@ bear:hp;110,atk;25,def;40,spd;10,spawn;4
 snake:hp;30,atk;50,def;10,spd;40,spawn;1
 giant spider:hp;10,atk;40,def;0,spd;30,spawn;1
 jaguar:hp;90,atk;60,def;20,spd;20,spawn;5
-//

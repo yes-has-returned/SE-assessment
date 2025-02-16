@@ -2,6 +2,7 @@ import random
 from os import system
 from time import sleep
 import math
+import pygame
 
 def clear():
     system('cls')
@@ -9,6 +10,17 @@ def clear():
 global rbiomedata
 
 #extracting data
+sample_tile = pygame.transform.scale_by(pygame.image.load("Sample Tile.png"),3)
+plains_tile = pygame.transform.scale_by(pygame.image.load("Plains Tile.png"),3)
+lforest_tile = pygame.transform.scale_by(pygame.image.load("LForest Tile.png"),3)
+forest_tile = pygame.transform.scale_by(pygame.image.load("Forest Tile.png"),3)
+dforest_tile = pygame.transform.scale_by(pygame.image.load("DForest Tile.png"),3)
+player_pointer = pygame.transform.scale_by(pygame.image.load("Player Pointer.png"),3)
+player_outliner = pygame.transform.scale_by(pygame.image.load("Player Outliner.png"),3)
+inventory_background = pygame.image.load("Inventory Background.jpg")
+exit_button = pygame.transform.scale_by(pygame.image.load("Inventory Exit Button.png"),3)
+cursor = pygame.transform.scale_by(pygame.image.load("Cursor.png"),3)
+pygame.Surface.set_alpha(inventory_background,50)
 rdata = open("gamedata.txt", "r").read().split("//")
 rbiomedata = rdata[0].strip("//").split("\n")
 ritemdata = rdata[1].strip("//").split("\n")
@@ -17,7 +29,6 @@ rentitydata = rdata[2].strip("//").split("\n")
 #getting entity data
 global entities
 entities = {}
-rentitydata.remove('')
 rentitydata.remove('')
 for i in rentitydata:
     temp = i.split(":")
@@ -41,8 +52,8 @@ biomes = biomes.split(",")
 ritemdata.remove('')
 ritemdata.remove('')
 ritemdata = [n.split(":") for n in ritemdata]
-global items
-items = {}
+global itemsd
+itemsd = {}
 for i in ritemdata:
 
     temp = i[1].split(",")
@@ -53,7 +64,7 @@ for i in ritemdata:
     tempdict = {}
     for f in temp:
         tempdict[f[0]] = f[1]
-    items[i[0]] = tempdict
+    itemsd[i[0]] = tempdict
 
 #getting biome description data
 data = {}
@@ -67,6 +78,12 @@ class GameMap:
         self.leveltobiome = {}
         self.biometolevel = {}
         self.biomeslist = []
+        self.biomegraphics = {
+            "Plains":plains_tile,
+            "LForest":lforest_tile,
+            "Forest":forest_tile,
+            "DForest":dforest_tile
+        }
         biome_level = 0
         for i in biomes:
             self.leveltobiome[biome_level] = i
@@ -102,50 +119,68 @@ class GameMap:
                 self.gmap[(xcor,ycor)] = outputbiome
             return outputbiome
         
-    def GenerateDesc(self,xcor,ycor,night):
+    def GenerateSurroundings(self,xcor,ycor):
         '''
-        Generates description based on the biomes around the player.
+        Generates surroundings of player
         '''
-        left=self.LoadChunk(xcor-1,ycor)
-        right=self.LoadChunk(xcor+1,ycor)
-        up=self.LoadChunk(xcor,ycor+1)
-        down=self.LoadChunk(xcor,ycor-1)
-        current=self.LoadChunk(xcor,ycor)
-        templist = {"\33[1;49;36m To your left \33[0;49;37m":data[left+"Adj"],
-                    "\33[1;49;36m To your right \33[0;49;37m":data[right+"Adj"],
-                    "\33[1;49;36m Further in front of you \33[0;49;37m":data[up+"Adj"],
-                    "\33[1;49;36m Further behind you \33[0;49;37m":data[down+"Adj"]}
-        descstr = ""
-        if night == False:
-            descstr+=data[current+random.choice(["","2"])]
-        elif night == True:
-            descstr+=data[current+"N"]
-        shared = []
-        not_shared = list(templist.keys())
-        while len(not_shared) > 1:
-            i = not_shared[0]
-            other = not_shared[1:]
-            temp = [i]
-            for n in other:
-                if templist[i] == templist[n]:
-                    temp.append(n)
-            for n in temp:
-                not_shared.remove(n)
-            shared.append(temp)
-        if len(not_shared) == 1:
-            shared.append([not_shared[0]])
-        for n in shared:
-            for m in range(len(n)):
-                if m == 0:
-                    descstr += n[m]
-                elif m == len(n)-1:
-                    descstr += f"and{n[m].lower()}"
-                else:
-                    descstr+=f",{n[m].lower()}"
-            descstr+=templist[n[0]]
-                
+        self.LoadChunk(xcor-1,ycor)
+        self.LoadChunk(xcor+1,ycor)
+        self.LoadChunk(xcor,ycor+1)
+        self.LoadChunk(xcor,ycor-1)
+        self.LoadChunk(xcor,ycor)
+    
+    
+    def GenerateTile(self,tilex,tiley,playerx,playery,originx,originy,tile):
+        '''
+        Generates an image for a tile at tilex,tiley
+        '''
+        if tilex == playerx and tiley == playery:
+            return [tile,originx,originy,0,0]
+        
+        else:
+            addedy = 0
+            addedx = 0
+            xqueue = 0
+            yqueue = 0
+            tempx = tilex
+            tempy = tiley
+            if tilex > playerx:
+                while tempx > playerx:
+                    addedx += 60
+                    addedy += 30
+                    tempx -= 1
 
-        return descstr
+
+            elif tilex < playerx:
+                while tempx < playerx:
+                    addedx -= 60
+                    addedy -= 30
+                    tempx += 1
+
+
+            if tiley > playery:
+                while tempy > playery:
+                    addedx -= 60
+                    addedy += 30
+                    tempy -= 1
+
+            elif tiley < playery:
+                while tempy < playery:
+                    addedx += 60
+                    addedy -= 30
+                    tempy += 1
+            return [tile,originx+addedx,originy+addedy]
+        
+    def GenerateMap(self,playerx,playery):
+        todolist = []
+        for i in self.gmap.keys():
+            tilex = i[0]
+            tiley = i[1]
+            temp = self.GenerateTile(tilex,tiley,playerx,playery,640,360,self.biomegraphics[self.gmap[i]])
+            todolist.append(temp)
+        todolist.sort(key = lambda x:x[2])   
+        return todolist
+
 
 #time related things
 class Timer:
@@ -231,20 +266,20 @@ class Player:
         '''
         Moves the player in a certain direction
         '''
-        if dir == "left":
+        if dir == "a":
             self.xcor -= 1
-        elif dir == "right":
+        elif dir == "d":
             self.xcor += 1
-        elif dir == "up":
+        elif dir == "w":
             self.ycor += 1
-        elif dir == "down":
+        elif dir == "s":
             self.ycor -= 1
 
     def Search(self):
         '''
         Randomly selects  an item out of the current biome item lootpool
         '''
-        lootpool = items[self.currentbiome]
+        lootpool = itemsd[self.currentbiome]
         obtained = []
         for t in range(self.searchtimes):
             lootpossibility = []
@@ -264,27 +299,27 @@ class Player:
                 self.inventory[i] = self.inventory[i]+1
             else:
                 self.inventory[i] = 1
+        return items
 
     def CheckInventory(self):
         '''
         Displays the player's inventory
         '''
-        print("~INVENTORY~")
-        for i in self.inventory.keys():
-            print(f"{self.inventory[i]}x {i}")
+        return self.inventory
 
     def PerformAction(self,inp):
         '''
         Performs an action according to the input
         '''
-        if inp in ["up","down","left","right"]:
+        if inp in ["w","a","s","d"]:
             self.Move(inp)
 
-        elif inp in ["search"]:
+        elif inp in ["e"]:
             items = self.Search()
-            self.GainItems(items)
+            ilist = self.GainItems(items)
+            return ilist
 
-        elif inp in ["inv","checkinventory","inventory"]:
+        elif inp in ["q"]:
             self.CheckInventory()
 
 #game text related things
@@ -329,14 +364,99 @@ M = GameMap(biomes)
 P = Player(M.gmap[(0,0)])
 T = Timer()
 G = GSys()
+pygame.init()
+events = pygame.event.get()
+white = pygame.Color(255,255,255)
+black = pygame.Color(0,0,0)
+blackbackground = pygame.Color(0,0,0,50)
+pygame.init()
+screen = pygame.display.set_mode((1280, 720))
+clock = pygame.time.Clock()
+pygame.font.init()
+font = pygame.font.Font("LibreBaskerville-Regular.ttf",12)
+cursor = pygame.cursors.Cursor((93, 93), cursor)
+pygame.mouse.set_cursor(cursor)
+running = True
+show_inventory = False
 
+xcor = 640
+ycor = 360
 
 #introduction
 #main gameplay
-while True:
-    print(T.displaytime())
-    print(M.GenerateDesc(P.xcor,P.ycor,False))
-    print(T.timebasedmessage())
-    action = input(">> ").lower()
-    P.PerformAction(action)
-    T.tick()
+s = False
+time_elapsed = 0
+current_item_displayed = ""
+idict = {}
+while running:
+    if current_item_displayed == "":
+        time_elapsed = 0
+        if idict != {}:
+            item = list(idict.keys())[0]
+            current_item_displayed = f"found: {idict[item]}x {item}"
+            idict.pop(item)
+
+    if time_elapsed > 2:
+        if idict != {}:
+            item = list(idict.keys())[0]
+            current_item_displayed = f"found: {idict[item]}x {item}"
+            idict.pop(item)
+            time_elapsed = 0
+        else:
+            current_item_displayed = ""
+            time_elapsed = 0
+
+    item_notif = font.render(current_item_displayed, False, white, black)
+    
+    pygame.event.pump()
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_w] == True:
+        P.PerformAction("w")
+        T.tick()
+        s = True
+    elif keys[pygame.K_s] == True:
+        P.PerformAction("s")
+        T.tick()
+        s = True
+    elif keys[pygame.K_a] == True:
+        P.PerformAction("a")
+        T.tick()
+        s = True
+    elif keys[pygame.K_d] == True:
+        P.PerformAction("d")
+        T.tick()
+        s = True
+    elif keys[pygame.K_e] == True:
+        items = P.PerformAction("e")
+        for i in items:
+            if i in idict:
+                idict[i] = idict[i] + 1
+            else:
+                idict[i] = 1
+        T.tick()
+        s = True
+    elif keys[pygame.K_q] == True:
+        inv = P.PerformAction("q")
+        s = True
+        if show_inventory == True:
+            show_inventory = False
+        elif show_inventory == False:
+            show_inventory = True
+    M.GenerateSurroundings(P.xcor,P.ycor)
+    t = M.GenerateMap(P.xcor,P.ycor)
+    for i in t:
+        screen.blit(i[0],(i[1],i[2]))
+    screen.blit(player_outliner,(xcor,ycor))
+    screen.blit(player_pointer,(xcor,ycor-60))
+    screen.blit(item_notif,(1100,600))
+    if show_inventory == True:
+        screen.blit(inventory_background,(0,0))
+        screen.blit(exit_button,(1185,0))
+    
+    pygame.display.update()
+    sleep(0.01)
+    time_elapsed += 0.01
+    if s == True:
+        sleep(0.1)
+        time_elapsed += 0.1
+    screen.fill(black)
