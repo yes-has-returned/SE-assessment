@@ -1,0 +1,6 @@
+scythe:20xiron nugget,5xstick,1xflint
+pointy stick:1xstick,1xflint
+iron nugget:5xiron ore
+hefty stone:5xrock
+dagger:10xiron nugget,4xstick,1xflint
+fertile soil:20xgrass,4xsoil

@@ -17,10 +17,29 @@ forest_tile = pygame.transform.scale_by(pygame.image.load("Forest Tile.png"),3)
 dforest_tile = pygame.transform.scale_by(pygame.image.load("DForest Tile.png"),3)
 player_pointer = pygame.transform.scale_by(pygame.image.load("Player Pointer.png"),3)
 player_outliner = pygame.transform.scale_by(pygame.image.load("Player Outliner.png"),3)
-inventory_background = pygame.image.load("Inventory Background.jpg")
-exit_button = pygame.transform.scale_by(pygame.image.load("Inventory Exit Button.png"),3)
+inventory_entry = pygame.image.load("Inventory Entry Button.png")
+inventory_entryh = pygame.image.load("Inventory Entry Button Highlighted.png")
+item_background = pygame.image.load("Item Background.png")
+global item_graphics
+item_graphics = {
+    "grass":pygame.transform.scale_by(pygame.image.load("grass.png"),3),
+    "rock":pygame.transform.scale_by(pygame.image.load("rock.png"),3),
+    "flint":pygame.transform.scale_by(pygame.image.load("flint.png"),3),
+    "fertile soil":pygame.transform.scale_by(pygame.image.load("fertile soil.png"),3),
+    "iron ore":pygame.transform.scale_by(pygame.image.load("iron ore.png"),3),
+    "pebble":pygame.transform.scale_by(pygame.image.load("pebble.png"),3),
+    "soil":pygame.transform.scale_by(pygame.image.load("soil.png"),3),
+    "stick":pygame.transform.scale_by(pygame.image.load("stick.png"),3),
+    "iron nugget":pygame.transform.scale_by(pygame.image.load("Iron Nugget.png"),1.5),
+    "energy sword":pygame.transform.scale_by(pygame.image.load("Energy Sword.png"),1.5),
+    "green energy sword":pygame.transform.scale_by(pygame.image.load("Green Energy Sword.png"),1.5),
+    "hefty stone":pygame.transform.scale_by(pygame.image.load("Hefty Stone.png"),3),
+    "pointy stick":pygame.transform.scale_by(pygame.image.load("Pointy Stick.png"),1.7),
+    "scythe":pygame.transform.scale_by(pygame.image.load("Scythe.png"),3),
+    "dagger":pygame.transform.scale_by(pygame.image.load("Dagger.png"),3)
+}
+
 cursor = pygame.transform.scale_by(pygame.image.load("Cursor.png"),3)
-pygame.Surface.set_alpha(inventory_background,50)
 rdata = open("gamedata.txt", "r").read().split("//")
 rbiomedata = rdata[0].strip("//").split("\n")
 ritemdata = rdata[1].strip("//").split("\n")
@@ -70,6 +89,37 @@ for i in ritemdata:
 data = {}
 for i in rbiomedata:
     data[i[0]] = i[1]
+
+craftingdata = open("craftingdata.txt","r").read().split("\n")
+craftingdata = [n.strip("\n") for n in craftingdata]
+craftingdata = [n.split(":") for n in craftingdata]
+craftingdata = [[n[0],n[1].split(",")] for n in craftingdata]
+global craftingdict
+craftingdict = {}
+for i in craftingdata:
+    craftingdict[i[0]] = i[1]
+
+
+
+for i in craftingdict.keys():
+    temp = []
+    for j in craftingdict[i]:
+        templist = j.split("x")
+        templist[0] = int(templist[0])
+        temp.append(templist)
+    craftingdict[i] = temp
+print(craftingdict)
+
+
+def button(top_leftx,top_lefty,bottom_rightx,bottom_righty,cursor_posx,cursor_posy):
+    if cursor_posx >= top_leftx and cursor_posx <= bottom_rightx and cursor_posy >= top_lefty and cursor_posy <= bottom_righty:
+        return True
+    
+    else:
+        return False
+
+def inv_button(top_leftx,top_lefty):
+    pass
 
 #map related things
 class GameMap:
@@ -259,7 +309,7 @@ class Player:
         self.xcor = 0
         self.ycor = 0
         self.currentbiome = biome 
-        self.inventory = {}
+        self.inventory = {"pointy stick":1}
         self.searchtimes = 5
 
     def Move(self,dir):
@@ -326,12 +376,154 @@ class Player:
 class GSys:
     def __init__(self):
         self.gamestage = 0
+        self.inventory_background = pygame.image.load("Inventory Background.jpg")
+        self.exit_button = pygame.transform.scale_by(pygame.image.load("Inventory Exit Button.png"),3)
+        self.exit_buttonh = pygame.transform.scale_by(pygame.image.load("Inventory Exit Button Hover.png"),3)
+        self.item_display = pygame.transform.scale_by(pygame.image.load("inventory item display.png"),3)
+        self.inv_up = pygame.transform.scale_by(pygame.image.load("Inventory Up Arrow.png"),3)
+        self.inv_down = pygame.transform.scale_by(pygame.image.load("Inventory Down Arrow.png"),3)
+        self.inv_uph = pygame.transform.scale_by(pygame.image.load("Inventory Up Arrow Highlighted.png"),3)
+        self.inv_downh = pygame.transform.scale_by(pygame.image.load("Inventory Down Arrow Highlighted.png"),3)
+        self.crafting_display = pygame.transform.scale_by(pygame.image.load("crafting item display.png"),3)
+        self.craftable_button = pygame.transform.scale_by(pygame.image.load("Craftable button.png"),3)
+        self.craftable_buttonh = pygame.transform.scale_by(pygame.image.load("Craftable button hover.png"),3)
+        self.uncraftable_button = pygame.transform.scale_by(pygame.image.load("Uncraftable button.png"),3)
+        self.uncraftable_buttonh = pygame.transform.scale_by(pygame.image.load("Uncraftable button hover.png"),3)
+        self.displaying = {}
+        self.displayingcrafting = {}
+        self.inv_contents = {}
+        self.inv_reopened = True
+        self.crafting_reopened = True
+        self.craftable = True
+        pygame.Surface.set_alpha(self.inventory_background,50)
 
-    def notif(self, text, continuetext="<PRESS ENTER TO CONTINUE>"):
-        print(text)
-        input(continuetext)
-        clear()
+    def updateinventory(self,inv):
+        self.inv_contents = inv
+    
+    def inventoryscreen(self,mouse_posx,mouse_posy,left_pressed):
+        screen.blit(self.inventory_background,(0,0))
+        starting_y = 50
+        if self.inv_reopened == True:
+            if self.inv_contents != {}:
+                for i in self.inv_contents:
+                    self.displaying[i] = starting_y
+                    starting_y += 150
+            self.craftable = True
+            self.inv_reopened = False
+        
+        if self.displaying != {}:
+            for i in self.displaying:
+                screen.blit(self.item_display,(50,self.displaying[i]))
+                screen.blit(item_graphics[i],(70,self.displaying[i]+20))
+                itemtext = futurefont.render(f"{self.inv_contents[i]}x {i}",False,white)
+                screen.blit(itemtext,(170,self.displaying[i]+20))
+        highlighted = button(500,300,572,363,mouse_posx,mouse_posy)
+        if highlighted == True:
+            screen.blit(self.inv_uph,(500,300))
+            if left_pressed == True:
+                for i in self.displaying:
+                    self.displaying[i] = self.displaying[i]+150
+        else:
+            screen.blit(self.inv_up,(500,300))
+        highlighted = button(500,400,572,463,mouse_posx,mouse_posy)
+        if highlighted == True:
+            screen.blit(self.inv_downh,(500,400))
+            if left_pressed == True:
+                for i in self.displaying:
+                    self.displaying[i] = self.displaying[i]-150
+        else:
+            screen.blit(self.inv_down,(500,400))
 
+
+
+        starting_y = 50
+
+        if self.crafting_reopened == True:
+            self.displayingcrafting = {}
+            if self.craftable == True:
+                for i in craftingdict.keys():
+                    craft = True
+                    for n in craftingdict[i]:
+                        if n[1] in self.inv_contents.keys():
+                            if n[0] >= self.inv_contents[n[1]]:
+                                craft = False
+                        else:
+                            craft = False
+                    if craft == True:
+                        self.displayingcrafting[i] = starting_y
+                        starting_y += 150
+            elif self.craftable == False:
+                for i in craftingdict.keys():
+                    self.displayingcrafting[i] = starting_y
+                    starting_y += 150
+            self.crafting_reopened = False
+
+        iterable = list(self.displayingcrafting.keys())
+        iterable.sort()
+        for i in iterable:
+            screen.blit(self.crafting_display,(800,self.displayingcrafting[i]))
+            screen.blit(pygame.transform.scale_by(item_graphics[i],0.5),(800,self.displayingcrafting[i]))                
+            screen.blit(futurefont.render(i,False,white),(820,self.displayingcrafting[i]+30))
+            recipey = self.displayingcrafting[i]
+            for n in craftingdict[i]:
+                screen.blit(pygame.transform.scale_by(item_graphics[n[1]],0.4),(975,recipey))
+                screen.blit(futurefontS.render(f"{n[0]}x {n[1]}",False,white),(1015,recipey+15))
+                recipey += 20
+        highlighted = button(700,300,772,363,mouse_posx,mouse_posy)
+        if highlighted == True:
+            screen.blit(self.inv_uph,(700,300))
+            if left_pressed == True:
+                for i in self.displayingcrafting:
+                    self.displayingcrafting[i] = self.displayingcrafting[i] + 150
+        else:                
+            screen.blit(self.inv_up,(700,300))
+        
+        highlighted = button(700,400,772,463,mouse_posx,mouse_posy)
+        if highlighted == True:
+            screen.blit(self.inv_downh,(700,400))
+            if left_pressed == True:
+                for i in self.displayingcrafting:
+                    self.displayingcrafting[i] = self.displayingcrafting[i] - 150
+        else:
+            screen.blit(self.inv_down,(700,400))
+
+
+        highlighted = button(1200,200,1272,263,mouse_posx,mouse_posy)
+        if self.craftable == True:
+            if highlighted == True:
+                screen.blit(self.craftable_buttonh,(1200,200))
+                if left_pressed == True:
+                    self.craftable = False
+                    self.crafting_reopened = True
+            else:
+                screen.blit(self.craftable_button,(1200,200))
+        
+        elif self.craftable == False:
+            if highlighted == True:
+                screen.blit(self.uncraftable_buttonh,(1200,200))
+                if left_pressed == True:
+                    self.craftable = True
+                    self.crafting_reopened = True
+            else:
+                screen.blit(self.uncraftable_button,(1200,200))
+        sleep(0.1)
+        highlighted = button(1260,0,1280,27,mouse_posx,mouse_posy)
+        if highlighted == True:
+            screen.blit(self.exit_buttonh,(1185,0))
+            if left_pressed == True:
+                self.inv_reopened = True
+                self.crafting_reopened = True
+                return False
+                
+            else:
+                return True
+        else:
+            screen.blit(self.exit_button,(1185,0))
+            return True
+        
+
+        
+        
 #entity encounter related things
 class EntitySys:
     def __init__(self):
@@ -357,6 +549,11 @@ class EntitySys:
         else:
             return []
 
+frame1 = pygame.transform.scale_by(pygame.image.load("Intro frame 1.png"),3)
+text1 = "Once upon a time, there was a land of only sky."
+introduction = False
+while introduction:
+    pass
 
 
 #initiating classes
@@ -368,12 +565,15 @@ pygame.init()
 events = pygame.event.get()
 white = pygame.Color(255,255,255)
 black = pygame.Color(0,0,0)
+battlebackground = pygame.Color(76,153,0)
 blackbackground = pygame.Color(0,0,0,50)
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 pygame.font.init()
 font = pygame.font.Font("LibreBaskerville-Regular.ttf",12)
+futurefont = pygame.font.Font("Netron .otf",12)
+futurefontS = pygame.font.Font("Netron .otf",10)
 cursor = pygame.cursors.Cursor((93, 93), cursor)
 pygame.mouse.set_cursor(cursor)
 running = True
@@ -386,14 +586,20 @@ ycor = 360
 #main gameplay
 s = False
 time_elapsed = 0
+player_pointer_time_elapsed = 0
 current_item_displayed = ""
 idict = {}
+displaying = None
+
+G.updateinventory(P.inventory)
 while running:
     if current_item_displayed == "":
         time_elapsed = 0
         if idict != {}:
             item = list(idict.keys())[0]
             current_item_displayed = f"found: {idict[item]}x {item}"
+            displaying = item
+
             idict.pop(item)
 
     if time_elapsed > 2:
@@ -402,11 +608,13 @@ while running:
             current_item_displayed = f"found: {idict[item]}x {item}"
             idict.pop(item)
             time_elapsed = 0
+            displaying = item
         else:
             current_item_displayed = ""
+            displaying = None
             time_elapsed = 0
 
-    item_notif = font.render(current_item_displayed, False, white, black)
+    item_notif = futurefont.render(current_item_displayed, False, white, black)
     
     pygame.event.pump()
     keys = pygame.key.get_pressed()
@@ -433,12 +641,15 @@ while running:
                 idict[i] = idict[i] + 1
             else:
                 idict[i] = 1
+        G.updateinventory(P.inventory)
         T.tick()
         s = True
     elif keys[pygame.K_q] == True:
         inv = P.PerformAction("q")
         s = True
         if show_inventory == True:
+            G.inv_reopened = True
+            G.crafting_reopened = True
             show_inventory = False
         elif show_inventory == False:
             show_inventory = True
@@ -448,14 +659,35 @@ while running:
         screen.blit(i[0],(i[1],i[2]))
     screen.blit(player_outliner,(xcor,ycor))
     screen.blit(player_pointer,(xcor,ycor-60))
-    screen.blit(item_notif,(1100,600))
+    screen.blit(item_notif,(1100,650))
+    if displaying != None:
+        screen.blit(item_graphics[displaying],(1000,600))
+    mousepos = pygame.mouse.get_pos()
+    mousepress = pygame.mouse.get_pressed()
+    leftbutton = mousepress[0]
+    middlebutton = mousepress[1]
+    rightbutton = mousepress[2]
+    mousex = mousepos[0]
+    mousey = mousepos[1]
     if show_inventory == True:
-        screen.blit(inventory_background,(0,0))
-        screen.blit(exit_button,(1185,0))
+        show_inventory = G.inventoryscreen(mousex,mousey,leftbutton)
+    elif show_inventory == False:
+        screen.blit(inventory_entry,(30,500))
+        highlighted = button(30,504,140,546,mousex,mousey)
+        if highlighted == True:
+            screen.blit(inventory_entryh,(30,500))
+            if leftbutton == True:
+                show_inventory = True
+        else:
+            screen.blit(inventory_entry,(30,500))
+        
+
+        
     
     pygame.display.update()
     sleep(0.01)
     time_elapsed += 0.01
+    player_pointer_time_elapsed += 0.01
     if s == True:
         sleep(0.1)
         time_elapsed += 0.1
