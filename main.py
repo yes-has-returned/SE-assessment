@@ -20,6 +20,9 @@ player_outliner = pygame.transform.scale_by(pygame.image.load("Player Outliner.p
 inventory_entry = pygame.image.load("Inventory Entry Button.png")
 inventory_entryh = pygame.image.load("Inventory Entry Button Highlighted.png")
 item_background = pygame.image.load("Item Background.png")
+title_screen = pygame.transform.scale_by(pygame.image.load("Game intro screen.png"),10)
+campfire_button = pygame.image.load("Light campfire button.png")
+campfire_buttonh = pygame.image.load("Light campfire button hover.png")
 global item_graphics
 item_graphics = {
     "grass":pygame.transform.scale_by(pygame.image.load("grass.png"),3),
@@ -36,7 +39,10 @@ item_graphics = {
     "hefty stone":pygame.transform.scale_by(pygame.image.load("Hefty Stone.png"),3),
     "pointy stick":pygame.transform.scale_by(pygame.image.load("Pointy Stick.png"),1.7),
     "scythe":pygame.transform.scale_by(pygame.image.load("Scythe.png"),3),
-    "dagger":pygame.transform.scale_by(pygame.image.load("Dagger.png"),3)
+    "dagger":pygame.transform.scale_by(pygame.image.load("Dagger.png"),3),
+    "rudimentary spear":pygame.transform.scale_by(pygame.image.load("Rudimentary spear.png"),1.5),
+    "rudimentary dagger":pygame.transform.scale_by(pygame.image.load("Rudimentary dagger.png"),1.5),
+    "sawdust":pygame.transform.scale_by(pygame.image.load("Sawdust.png"),1.5)
 }
 
 cursor = pygame.transform.scale_by(pygame.image.load("Cursor.png"),3)
@@ -108,7 +114,7 @@ for i in craftingdict.keys():
         templist[0] = int(templist[0])
         temp.append(templist)
     craftingdict[i] = temp
-print(craftingdict)
+
 
 
 def button(top_leftx,top_lefty,bottom_rightx,bottom_righty,cursor_posx,cursor_posy):
@@ -120,6 +126,7 @@ def button(top_leftx,top_lefty,bottom_rightx,bottom_righty,cursor_posx,cursor_po
 
 def inv_button(top_leftx,top_lefty):
     pass
+
 
 #map related things
 class GameMap:
@@ -344,7 +351,7 @@ class Player:
         Takes a list of items and adds them to player inventory
         '''
         for i in items:
-            print(f"+{i}")
+
             if i in self.inventory.keys():
                 self.inventory[i] = self.inventory[i]+1
             else:
@@ -372,6 +379,16 @@ class Player:
         elif inp in ["q"]:
             self.CheckInventory()
 
+    def MakeCampfire(self, num_rocks, num_sticks, num_sawdust, num_clicks):
+        campfire_threshold = num_rocks+num_sticks*2+num_sawdust*5+math.floor(num_clicks/10)
+        campfire_outcome = random.randint(1,100)
+        heat = num_sticks*4
+        duration = num_sticks*5+num_rocks*3
+        if campfire_threshold >= campfire_outcome:
+            return True,heat,duration
+        else:
+            return False,heat,duration
+
 #game text related things
 class GSys:
     def __init__(self):
@@ -385,16 +402,25 @@ class GSys:
         self.inv_uph = pygame.transform.scale_by(pygame.image.load("Inventory Up Arrow Highlighted.png"),3)
         self.inv_downh = pygame.transform.scale_by(pygame.image.load("Inventory Down Arrow Highlighted.png"),3)
         self.crafting_display = pygame.transform.scale_by(pygame.image.load("crafting item display.png"),3)
+        self.crafting_displayh = pygame.transform.scale_by(pygame.image.load("crafting item displayh.png"),3)
         self.craftable_button = pygame.transform.scale_by(pygame.image.load("Craftable button.png"),3)
         self.craftable_buttonh = pygame.transform.scale_by(pygame.image.load("Craftable button hover.png"),3)
         self.uncraftable_button = pygame.transform.scale_by(pygame.image.load("Uncraftable button.png"),3)
         self.uncraftable_buttonh = pygame.transform.scale_by(pygame.image.load("Uncraftable button hover.png"),3)
+        self.campfire_exit_button = pygame.transform.scale_by(pygame.image.load("Campfire Exit Button.png"),3)
+        self.campfire_exit_buttonh = pygame.transform.scale_by(pygame.image.load("Campfire Exit Button Hover.png"),3)
+        self.campfire_background = pygame.image.load("Campfire background.png")
+        self.campfire_ui = pygame.image.load("Campfire UI.png")
+        self.start_campfire_background = pygame.image.load("Start campfire overlay.png")
+        self.recent_craft = None
         self.displaying = {}
         self.displayingcrafting = {}
         self.inv_contents = {}
         self.inv_reopened = True
         self.crafting_reopened = True
+        self.campfire_reopened = True
         self.craftable = True
+        pygame.Surface.set_alpha(self.start_campfire_background,150)
         pygame.Surface.set_alpha(self.inventory_background,50)
 
     def updateinventory(self,inv):
@@ -404,6 +430,7 @@ class GSys:
         screen.blit(self.inventory_background,(0,0))
         starting_y = 50
         if self.inv_reopened == True:
+            self.displaying = {}
             if self.inv_contents != {}:
                 for i in self.inv_contents:
                     self.displaying[i] = starting_y
@@ -413,6 +440,7 @@ class GSys:
         
         if self.displaying != {}:
             for i in self.displaying:
+                
                 screen.blit(self.item_display,(50,self.displaying[i]))
                 screen.blit(item_graphics[i],(70,self.displaying[i]+20))
                 itemtext = futurefont.render(f"{self.inv_contents[i]}x {i}",False,white)
@@ -445,7 +473,7 @@ class GSys:
                     craft = True
                     for n in craftingdict[i]:
                         if n[1] in self.inv_contents.keys():
-                            if n[0] >= self.inv_contents[n[1]]:
+                            if n[0] > self.inv_contents[n[1]]:
                                 craft = False
                         else:
                             craft = False
@@ -461,7 +489,31 @@ class GSys:
         iterable = list(self.displayingcrafting.keys())
         iterable.sort()
         for i in iterable:
-            screen.blit(self.crafting_display,(800,self.displayingcrafting[i]))
+            highlighted = button(800,self.displayingcrafting[i],1130,self.displayingcrafting[i]+135,mouse_posx,mouse_posy)
+            if highlighted == True:
+                screen.blit(self.crafting_displayh,(800,self.displayingcrafting[i]))
+                if left_pressed == True:
+                    craftable = True
+                    for n in craftingdict[i]:
+                        if n[1] in self.inv_contents:
+                            if n[0] > self.inv_contents[n[1]]:
+                                craftable = False
+                        else:
+                            craftable = False
+                    if craftable == True:
+                        for n in craftingdict[i]:
+                            self.inv_contents[n[1]] = self.inv_contents[n[1]] - n[0]
+                            if self.inv_contents[n[1]] == 0:
+                                self.inv_contents.pop(n[1])
+                        if i in self.inv_contents:
+                            self.inv_contents[i] = self.inv_contents[i] + 1
+                        else:
+                            self.inv_contents[i] = 1
+                        self.crafting_reopened = True
+                        self.inv_reopened = True
+                    
+            else:
+                screen.blit(self.crafting_display,(800,self.displayingcrafting[i]))
             screen.blit(pygame.transform.scale_by(item_graphics[i],0.5),(800,self.displayingcrafting[i]))                
             screen.blit(futurefont.render(i,False,white),(820,self.displayingcrafting[i]+30))
             recipey = self.displayingcrafting[i]
@@ -520,6 +572,71 @@ class GSys:
         else:
             screen.blit(self.exit_button,(1185,0))
             return True
+
+    def campfire_screen(self):
+        if self.campfire_reopened == True:
+            self.campfire_reopened = False
+            self.fade_in(None,self.campfire_background,black)
+        screen.blit(self.campfire_background,(0,0))
+
+    def fade_in(self,img1,img2,backingcolor,mode="separate",xcor=0,ycor=0):
+        img1copy = img1
+        img2copy = img2
+        img1alpha = 255
+        img2alpha = 0
+        secs = 3
+        repeats = int(secs/0.01)
+        alphachange = 255/repeats
+        if mode == "separate":
+            if img1 != None:
+                for i in range(repeats):
+                    pygame.event.pump()
+                    screen.fill(backingcolor)
+                    img1copy.set_alpha(img1alpha)
+                    screen.blit(img1copy,(xcor,ycor))
+                    img1alpha -= alphachange
+                    pygame.display.update()
+                    sleep(0.005)
+                screen.fill(backingcolor)
+            if img2 != None:
+                for i in range(repeats):
+                    pygame.event.pump()
+                    screen.fill(backingcolor)
+                    img2copy.set_alpha(img2alpha)
+                    screen.blit(img2copy,(xcor,ycor))
+                    img2alpha += alphachange
+                    pygame.display.update()
+                    sleep(0.005)
+                screen.blit(img2,(xcor,ycor))
+        elif mode == "together":
+            for i in range(repeats):
+                pygame.event.pump()
+                screen.fill(backingcolor)
+                img1copy.set_alpha(img1alpha)
+                img2copy.set_alpha(img2alpha)
+                img1alpha -= alphachange
+                img2alpha += alphachange
+                screen.blit(img1copy,(xcor,ycor))
+                screen.blit(img2copy,(xcor,ycor))
+                pygame.display.update()
+                sleep(0.01)
+            screen.blit(img2,(xcor,ycor))
+    
+    def start_campfire_UI(self,mouse_posx,mouse_posy,left_pressed):
+        screen.blit(self.start_campfire_background,(0,0))
+        highlighted = button(1260,0,1280,27,mouse_posx,mouse_posy)
+        if highlighted == True:
+            screen.blit(self.campfire_exit_buttonh,(1185,0))
+            if left_pressed == True:
+                return False
+                
+            else:
+                return True
+        else:
+            screen.blit(self.campfire_exit_button,(1185,0))
+            return True
+
+
         
 
         
@@ -549,11 +666,8 @@ class EntitySys:
         else:
             return []
 
-frame1 = pygame.transform.scale_by(pygame.image.load("Intro frame 1.png"),3)
-text1 = "Once upon a time, there was a land of only sky."
-introduction = False
-while introduction:
-    pass
+
+
 
 
 #initiating classes
@@ -567,29 +681,76 @@ white = pygame.Color(255,255,255)
 black = pygame.Color(0,0,0)
 battlebackground = pygame.Color(76,153,0)
 blackbackground = pygame.Color(0,0,0,50)
-pygame.init()
 screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 pygame.font.init()
 font = pygame.font.Font("LibreBaskerville-Regular.ttf",12)
 futurefont = pygame.font.Font("Netron .otf",12)
 futurefontS = pygame.font.Font("Netron .otf",10)
+futurefontL = pygame.font.Font("Netron .otf",15)
 cursor = pygame.cursors.Cursor((93, 93), cursor)
 pygame.mouse.set_cursor(cursor)
 running = True
-show_inventory = False
+player_pointer_offset_change = -0.5
+start_campfire_screen = False
+lighting_campfire_screen = False
+show_title = False
+
 
 xcor = 640
 ycor = 360
 
+#Title screen
+
+
 #introduction
+frame1 = pygame.transform.scale_by(pygame.image.load("Intro frame 1.png"),3)
+text1 = "Once upon a time, there was a land of only sky."
+introduction = False
+
+if show_title == True:
+    G.fade_in(None,title_screen,black,)
+else:
+    print("The title screen loading animation has been blocked by show_title on line 679")
+
+not_clicked = True
+mode = "subtract"
+shown = True
+secs = 0
+while not_clicked:
+    screen.blit(title_screen,(0,0))
+    if secs >= 0.2:
+        if shown == True:
+            shown = False
+        elif shown == False:
+            shown = True
+        secs = 0
+    if shown:
+        continuetext = futurefontL.render("Click anywhere to continue:",False,white)
+        screen.blit(continuetext,(500,650))
+
+    pygame.event.pump()
+    mousepress = pygame.mouse.get_pressed()
+    if mousepress[0] == True:
+        not_clicked = False
+    sleep(0.01)
+    secs += 0.01
+    pygame.display.update()
+    screen.fill(black)
+while introduction:
+    pass
+
+
 #main gameplay
 s = False
 time_elapsed = 0
-player_pointer_time_elapsed = 0
 current_item_displayed = ""
 idict = {}
 displaying = None
+inbattle = False
+show_inventory = False
+campfire_lit = False
+player_pointer_offset = 0
 
 G.updateinventory(P.inventory)
 while running:
@@ -617,78 +778,94 @@ while running:
     item_notif = futurefont.render(current_item_displayed, False, white, black)
     
     pygame.event.pump()
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_w] == True:
-        P.PerformAction("w")
-        T.tick()
-        s = True
-    elif keys[pygame.K_s] == True:
-        P.PerformAction("s")
-        T.tick()
-        s = True
-    elif keys[pygame.K_a] == True:
-        P.PerformAction("a")
-        T.tick()
-        s = True
-    elif keys[pygame.K_d] == True:
-        P.PerformAction("d")
-        T.tick()
-        s = True
-    elif keys[pygame.K_e] == True:
-        items = P.PerformAction("e")
-        for i in items:
-            if i in idict:
-                idict[i] = idict[i] + 1
-            else:
-                idict[i] = 1
-        G.updateinventory(P.inventory)
-        T.tick()
-        s = True
-    elif keys[pygame.K_q] == True:
-        inv = P.PerformAction("q")
-        s = True
-        if show_inventory == True:
-            G.inv_reopened = True
-            G.crafting_reopened = True
-            show_inventory = False
-        elif show_inventory == False:
-            show_inventory = True
-    M.GenerateSurroundings(P.xcor,P.ycor)
-    t = M.GenerateMap(P.xcor,P.ycor)
-    for i in t:
-        screen.blit(i[0],(i[1],i[2]))
-    screen.blit(player_outliner,(xcor,ycor))
-    screen.blit(player_pointer,(xcor,ycor-60))
-    screen.blit(item_notif,(1100,650))
-    if displaying != None:
-        screen.blit(item_graphics[displaying],(1000,600))
-    mousepos = pygame.mouse.get_pos()
-    mousepress = pygame.mouse.get_pressed()
-    leftbutton = mousepress[0]
-    middlebutton = mousepress[1]
-    rightbutton = mousepress[2]
-    mousex = mousepos[0]
-    mousey = mousepos[1]
-    if show_inventory == True:
-        show_inventory = G.inventoryscreen(mousex,mousey,leftbutton)
-    elif show_inventory == False:
-        screen.blit(inventory_entry,(30,500))
-        highlighted = button(30,504,140,546,mousex,mousey)
-        if highlighted == True:
-            screen.blit(inventory_entryh,(30,500))
-            if leftbutton == True:
+    if campfire_lit == True:
+        G.campfire_screen()
+    else:
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w] == True:
+            P.PerformAction("w")
+            T.tick()
+            s = True
+        elif keys[pygame.K_s] == True:
+            P.PerformAction("s")
+            T.tick()
+            s = True
+        elif keys[pygame.K_a] == True:
+            P.PerformAction("a")
+            T.tick()
+            s = True
+        elif keys[pygame.K_d] == True:
+            P.PerformAction("d")
+            T.tick()
+            s = True
+        elif keys[pygame.K_e] == True:
+            items = P.PerformAction("e")
+            for i in items:
+                if i in idict:
+                    idict[i] = idict[i] + 1
+                else:
+                    idict[i] = 1
+            G.updateinventory(P.inventory)
+            T.tick()
+            s = True
+        elif keys[pygame.K_q] == True:
+            inv = P.PerformAction("q")
+            s = True
+            if show_inventory == True:
+                G.inv_reopened = True
+                G.crafting_reopened = True
+                show_inventory = False
+            elif show_inventory == False:
                 show_inventory = True
+        M.GenerateSurroundings(P.xcor,P.ycor)
+        t = M.GenerateMap(P.xcor,P.ycor)
+        for i in t:
+            screen.blit(i[0],(i[1],i[2]))
+        screen.blit(player_outliner,(xcor,ycor))
+        screen.blit(player_pointer,(xcor,ycor-60+player_pointer_offset))
+        screen.blit(item_notif,(1100,650))
+        if displaying != None:
+            screen.blit(item_graphics[displaying],(1000,600))
+        mousepos = pygame.mouse.get_pos()
+        mousepress = pygame.mouse.get_pressed()
+        leftbutton = mousepress[0]
+        middlebutton = mousepress[1]
+        rightbutton = mousepress[2]
+        mousex = mousepos[0]
+        mousey = mousepos[1]
+        if show_inventory == True:
+            show_inventory = G.inventoryscreen(mousex,mousey,leftbutton)
+            P.inventory = G.inv_contents
+        elif start_campfire_screen == True:
+            start_campfire_screen = G.start_campfire_UI(mousex,mousey,leftbutton)
+        elif lighting_campfire_screen == True:
+            pass
         else:
             screen.blit(inventory_entry,(30,500))
+            highlighted = button(30,504,140,546,mousex,mousey)
+            if highlighted == True:
+                screen.blit(inventory_entryh,(30,500))
+                if leftbutton == True:
+                    show_inventory = True
+            else:
+                screen.blit(inventory_entry,(30,500))
+            highlighted = button(30,564,140,606,mousex,mousey)
+            if highlighted == True:
+                screen.blit(campfire_buttonh,(30,560))
+                if leftbutton == True:
+                    start_campfire_screen = True
+            else:
+                screen.blit(campfire_button,(30,560))
         
-
+    player_pointer_offset += player_pointer_offset_change
         
-    
+    if player_pointer_offset <= -20 or player_pointer_offset >= 50:
+        player_pointer_offset_change *= -1
     pygame.display.update()
     sleep(0.01)
-    time_elapsed += 0.01
-    player_pointer_time_elapsed += 0.01
     if s == True:
-        sleep(0.1)
-        time_elapsed += 0.1
+        sleep(0.09)
+        s = False
+        player_pointer_offset += 9*player_pointer_offset_change
+    time_elapsed += 0.1
     screen.fill(black)

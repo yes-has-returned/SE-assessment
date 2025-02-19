@@ -4,3 +4,7 @@ iron nugget:5xiron ore
 hefty stone:5xrock
 dagger:10xiron nugget,4xstick,1xflint
 fertile soil:20xgrass,4xsoil
+rudimentary spear:3xstick,2xrock,1xflint
+rudimentary dagger:4xrock,1xstick,1xflint
+rock:5xpebble
+sawdust:2xstick,1xrock
