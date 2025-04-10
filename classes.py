@@ -250,6 +250,7 @@ class Timer:
     def __init__(self):
         self.time = random.randint(5,8)
         self.timeperiod = "morning"
+        self.days_played = 0
     
     def update(self,val):
         '''
@@ -286,6 +287,7 @@ class Timer:
         '''
         if self.time >= 23.9:
             self.time=-0.1
+            self.days_played += 1
         self.update(self.time+0.1)
 
     def timebasedmessage(self):

@@ -77,6 +77,7 @@ if show_title == True:
     showing_title = True
     imgdisp = title_screen
     alph = 0
+    days_played = 0
     for i in range(repeats):
         pygame.event.pump()
         screen.fill(black)
@@ -197,6 +198,7 @@ while running:
     G.updateinventory(P.inventory)
     A.unpause_time_ambience()
     A.get_time_ambience(T.time)
+    alive = False
     while alive:
         if current_item_displayed == "":
             time_elapsed = 0
@@ -354,6 +356,7 @@ while running:
             G.slept = False
             T.update(random.randint(5,9))
             A.get_time_ambience(T.time)
+            T.days_played += 1
         if s == True:
             T.tick()
             A.get_time_ambience(T.time)
@@ -389,11 +392,14 @@ while running:
     not_clicked = True
     if running == False:
         not_clicked = False
-    while not_clicked:
         A.stop_ambience()
+    while not_clicked:
+
         cursorx,cursory = pygame.mouse.get_pos()
         clicked = pygame.mouse.get_pressed(3)[0]
         highlighted = classes.button(500,500, 800, 600, cursorx, cursory)
+        days_played = futurefontL.render("Days survived: "+str(T.days_played),False,white,black)
+        screen.blit(days_played,(400,400))
         if highlighted == False:
             screen.blit(respawn_button,(500,500))
         else:
