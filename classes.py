@@ -626,7 +626,6 @@ class GSys:
             return True
 
     def campfire_screen(self,mouse_posx,mouse_posy,left_pressed):
-        global fading_in
         if self.campfire_reopened == True:
             self.campfire_reopened = False
             self.A.get_ambience("Campfire Ambience",volume=0.5)
@@ -642,11 +641,11 @@ class GSys:
                 screen.blit(self.night_sky_background1,(0,0))
 
                 sleep(3)
-                fading_in = [self.night_sky_background1,255,(0,0)]
+                self.fading_in = [self.night_sky_background1,255,(0,0)]
                 self.slept = True
                 self.campfire_reopened = True
                 self.A.stop_ambience()
-                return False
+                return self.fading_in
         else:
             screen.blit(self.sleep_button,(700,400))
         highlighted = button(1260,0,1280,27,mouse_posx,mouse_posy)
@@ -655,7 +654,7 @@ class GSys:
             if left_pressed == True:
                 self.campfire_reopened = True
                 self.A.stop_ambience()
-                return False
+                return [False, 0, (0,0)]
                 
             else:
                 return True

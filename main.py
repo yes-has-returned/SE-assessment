@@ -198,7 +198,7 @@ while running:
     G.updateinventory(P.inventory)
     A.unpause_time_ambience()
     A.get_time_ambience(T.time)
-    alive = False
+
     while alive:
         if current_item_displayed == "":
             time_elapsed = 0
@@ -241,8 +241,16 @@ while running:
             if event.type == pygame.QUIT:
                 running = False
                 alive = False
-        if campfire_lit == True:
-            G.campfire_screen()
+        if G.campfire_ui_shown == True:
+            A.pause_time_ambience()
+            mousex, mousey = pygame.mouse.get_pos()
+            mousepress = pygame.mouse.get_pressed(3)[0]
+            temp = G.campfire_screen(mousex, mousey, mousepress)
+            if temp != True:
+                G.campfire_ui_shown = False
+                fading_in = temp
+            print(temp)
+            A.unpause_time_ambience()
         else:
             keys = pygame.key.get_pressed()
             if keys[pygame.K_w] == True:
